@@ -1,95 +1,51 @@
-# Amplai Website — ampl-ai.com
+# ampl-ai by dalsson — site
 
-## Quick Deploy (15 minutes)
+Static marketing site with a Claude-powered chatbot. Deployed on Vercel.
 
-### Step 1: Install dependencies locally
-```bash
-npm install
+## Stack
+
+- Plain HTML + inline-Babel React (no build step)
+- One Vercel Edge Function at `api/chat.js` proxying Anthropic's API
+- The browser never sees the API key
+
+## Deploy to Vercel
+
+1. Push this folder to a GitHub repo.
+2. In Vercel, **Import Project** → pick the repo → leave the framework preset as **Other**. No build command, no output dir.
+3. Under **Settings → Environment Variables**, add:
+
+   | Key                  | Value                              |
+   |----------------------|------------------------------------|
+   | `ANTHROPIC_API_KEY`  | `sk-ant-...` from console.anthropic.com |
+   | `ALLOWED_ORIGIN`     | `https://ampl-ai.com` (optional, locks CORS) |
+   | `ANTHROPIC_MODEL`    | `claude-haiku-4-5` (optional)      |
+
+4. Deploy. The chatbot will hit `/api/chat` on the same origin — no CORS issues.
+
+## Local dev
+
+```
+cp .env.example .env.local
+# fill in ANTHROPIC_API_KEY
+npx vercel dev
 ```
 
-### Step 2: Test locally (optional)
-```bash
-npm run dev
-# Opens at http://localhost:3000
-```
+`vercel dev` serves the static files and runs the Edge function locally on
+http://localhost:3000.
 
-### Step 3: Push to GitHub
-```bash
-# If you don't have a GitHub account, create one at github.com
+## Files
 
-# Create a new repository on GitHub:
-# Go to github.com/new → Name it "amplai-site" → Keep it private → Create
+- `index.html` — page shell + Babel + script tags
+- `chrome.jsx` — Nav, Footer
+- `hero.jsx` — animated headline (canvas)
+- `sections.jsx` — Services, Process, Pillars, Quote, About, Contact
+- `chatbot.jsx` — floating Claude assistant
+- `app.jsx` — page router
+- `styles.css` — design tokens + components
+- `api/chat.js` — server proxy to Anthropic (the secret-keeper)
 
-# Then in your terminal:
-git init
-git add .
-git commit -m "Initial launch of ampl-ai.com"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/amplai-site.git
-git push -u origin main
-```
+## Cost / safety notes
 
-### Step 4: Deploy on Vercel
-1. Go to **vercel.com** and sign up with your GitHub account
-2. Click **"Add New Project"**
-3. Select your **amplai-site** repository
-4. Click **"Deploy"** — Vercel auto-detects Next.js and configures everything
-5. Wait ~60 seconds. Your site is now live at `amplai-site.vercel.app`
-
-### Step 5: Connect your domain (ampl-ai.com)
-1. In Vercel, go to your project → **Settings** → **Domains**
-2. Type `ampl-ai.com` and click **Add**
-3. Vercel will show you DNS records to add. Go to your domain registrar (Namecheap, etc.) and add:
-
-| Type  | Name | Value                  |
-|-------|------|------------------------|
-| A     | @    | 76.76.21.21            |
-| CNAME | www  | cname.vercel-dns.com   |
-
-4. Wait 5–30 minutes for DNS propagation
-5. Vercel automatically provisions an SSL certificate (https)
-6. Your site is now live at **https://ampl-ai.com**
-
-### Step 6: Enable live AI chatbot (optional)
-1. Get an API key from **console.anthropic.com**
-2. In Vercel: **Settings** → **Environment Variables**
-3. Add: `ANTHROPIC_API_KEY` = `sk-ant-...`
-4. Redeploy (Vercel auto-redeploys when env vars change)
-5. The chatbot now uses live AI instead of demo responses
-
-## Project Structure
-```
-amplai-site/
-├── app/
-│   ├── layout.js          # Root layout with SEO metadata
-│   ├── page.js            # Homepage (all sections)
-│   ├── globals.css         # Styles + responsive breakpoints
-│   ├── components/
-│   │   └── Chatbot.js     # Chat widget (demo + live mode)
-│   └── api/
-│       └── chat/
-│           └── route.js   # API proxy for Anthropic (server-side)
-├── public/                 # Static assets (add favicon, images here)
-├── package.json
-├── next.config.js
-└── .env.example           # Copy to .env.local for local dev
-```
-
-## Making Changes
-Edit any file, commit, and push to GitHub. Vercel auto-deploys on every push.
-
-```bash
-git add .
-git commit -m "Updated homepage copy"
-git push
-# Live in ~30 seconds
-```
-
-## Adding Pages
-Create new files in `app/` directory:
-- `app/demo/page.js` → ampl-ai.com/demo
-- `app/blog/page.js` → ampl-ai.com/blog
-- `app/about/page.js` → ampl-ai.com/about
-
-## Support
-Built by Amplai. For questions: hello@ampl-ai.com
+The Edge function caps each request at 1024 output tokens and trims history
+to the last 30 messages. For tighter control, add rate-limiting (Vercel KV +
+IP-based throttle) before going wide.
