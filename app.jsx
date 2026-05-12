@@ -81,6 +81,7 @@ function App() {
       )}
       <Footer setPage={setPage} />
       <Chatbot />
+      <Analytics />
     </div>
   );
 }
